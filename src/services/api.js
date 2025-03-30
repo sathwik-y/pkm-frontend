@@ -9,7 +9,7 @@ export const setLogoutFunction = (fn) => {
 };
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080',
 });
 
 api.interceptors.request.use(
