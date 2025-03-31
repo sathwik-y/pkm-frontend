@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { setLogoutFunction } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,46 +8,43 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check token validity on mount
   useEffect(() => {
-    const checkTokenValidity = async () => {
+    const checkToken = async () => {
       const token = localStorage.getItem('token');
       if (token) {
-        // Instead of calling a verification endpoint that doesn't exist,
-        // just assume token is valid until proven otherwise by API interceptors
         setIsAuthenticated(true);
-        // You could also try to get user info if needed
-        // But for now just set basic authentication state
+        setUser({ username: 'User' }); // Placeholder, modify based on your needs
       }
       setIsLoading(false);
     };
 
-    checkTokenValidity();
+    checkToken();
   }, []);
 
-  const login = async(username, password) => {
+  // Set logout function reference
+  useEffect(() => {
+    setLogoutFunction(logout);
+  }, []);
+
+  const login = async (username, password) => {
     try {
-      const response = await api.post('/login', {userName: username, password});
+      const response = await api.post('/login', { userName: username, password });
       localStorage.setItem('token', response.data.token);
       setIsAuthenticated(true);
       setUser({ username });
       return true;
     } catch (error) {
-      console.error('Login Failed: ', error);
+      console.error('Login Failed:', error.response?.data || error.message);
       return false;
     }
   };
 
   const register = async (username, emailId, password) => {
     try {
-      const response = await api.post('/register', {
-        userName: username,
-        emailId,
-        password
-      });
+      await api.post('/register', { userName: username, emailId, password });
       return true;
     } catch (error) {
-      console.error("Signup Failed: ", error);
+      console.error('Signup Failed:', error.response?.data || error.message);
       throw new Error(error.response?.data?.error || 'Signup failed');
     }
   };
@@ -56,12 +53,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     setUser(null);
-    window.location.href = '/login'; // Force redirect to login
+    window.location.href = '/login';
   };
 
   if (isLoading) {
-    // You could return a loading component here if needed
-    return <div className="loading">Loading...</div>;
+    return <div>Loading...</div>;
   }
 
   return (
