@@ -13,21 +13,11 @@ export const AuthProvider = ({ children }) => {
     const checkTokenValidity = async () => {
       const token = localStorage.getItem('token');
       if (token) {
-        try {
-          // Verify token is valid - make a request to a protected endpoint
-          await api.get('/verify-token');
-          setIsAuthenticated(true);
-          
-          // You could also get user info here if needed
-          // const userResponse = await api.get('/user/profile');
-          // setUser(userResponse.data);
-        } catch (error) {
-          console.log('Token invalid or expired');
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-          setIsAuthenticated(false);
-          setUser(null);
-        }
+        // Instead of calling a verification endpoint that doesn't exist,
+        // just assume token is valid until proven otherwise by API interceptors
+        setIsAuthenticated(true);
+        // You could also try to get user info if needed
+        // But for now just set basic authentication state
       }
       setIsLoading(false);
     };
