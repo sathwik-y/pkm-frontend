@@ -38,8 +38,13 @@ const KnowledgeBase = () => {
       const processedItems = Array.isArray(data) ? 
         data.map(item => {
           try {
+            // Convert contentId to number if it's numeric
+            const contentId = item.contentId;
+            const id = typeof contentId === 'string' && /^\d+$/.test(contentId) ? 
+              Number(contentId) : contentId;
+            
             return {
-              id: item.contentId || `temp-${Math.random().toString(36).substr(2, 9)}`,
+              id: id || `temp-${Math.random().toString(36).substr(2, 9)}`,
               title: item.title || 'Untitled',
               category: item.category || 'Uncategorized',
               type: item.type || 'Note', // Add type field with default
@@ -53,6 +58,12 @@ const KnowledgeBase = () => {
             return null; // Will be filtered out below
           }
         }).filter(Boolean) : []; // Filter out null items
+      
+      // Log the processed items to check ID types
+      console.log("Processed items with IDs:", processedItems.map(item => ({
+        id: item.id,
+        type: typeof item.id
+      })));
       
       setItems(processedItems);
       
@@ -145,19 +156,36 @@ const KnowledgeBase = () => {
   };
 
   const handleDeleteClick = (itemId) => {
-    setDeleteItemId(itemId);
+    console.log("Item ID to delete:", itemId, "Type:", typeof itemId);
+    // Convert to numeric ID if it's a string but contains only digits
+    const numericId = /^\d+$/.test(String(itemId)) ? Number(itemId) : itemId;
+    console.log("Converted ID:", numericId, "Type:", typeof numericId);
+    setDeleteItemId(numericId);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      await api.delete(`/items/delete/${deleteItemId}`);
+      // Log the ID that will be sent to the server
+      console.log("Deleting item with ID:", deleteItemId, "Type:", typeof deleteItemId);
+      
+      // Ensure the URL contains a properly formatted number if the ID is numeric
+      const url = `/items/delete/${deleteItemId}`;
+      console.log("Delete request URL:", url);
+      
+      const response = await api.delete(url);
+      console.log("Delete response:", response);
+      
       setItems(prevItems => prevItems.filter(item => item.id !== deleteItemId));
       setShowDeleteModal(false);
       setDeleteItemId(null);
     } catch (error) {
       console.error("Error deleting item:", error);
-      alert("Failed to delete item. Please try again.");
+      if (error.response) {
+        console.error("Error response status:", error.response.status);
+        console.error("Error response data:", error.response.data);
+      }
+      alert(`Failed to delete item. Error: ${error.response?.data || error.message}`);
     }
   };
   
